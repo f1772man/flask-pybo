@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
@@ -6,6 +6,10 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 migrate = Migrate()
+
+
+def page_not_found(e):
+    return render_template('404.html'), 404
 
 
 def create_app():
@@ -27,6 +31,9 @@ def create_app():
     # 필터
     from .filter import format_datetime
     app.jinja_env.filters['datetime'] = format_datetime
+
+    # 오류페이지
+    app.register_error_handler(404, page_not_found)
 
     return app
 
