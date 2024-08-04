@@ -14,14 +14,19 @@ def signup():
     form = UserCreateForm()
     if request.method == 'POST' and form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
-        if not user:
+        email_check = User.query.filter_by(email=form.email.data).first()
+        if not user and not email_check:
             user = User(username=form.username.data, password=generate_password_hash(form.password1.data),
                         email=form.email.data)
             db.session.add(user)
             db.session.commit()
             return redirect(url_for('main.index'))
-        else:
+        elif user and not email_check:
             flash('이미 존재하는 사용자입니다.')
+        elif not user and email_check:
+            flash('이미 사용된 이메일입니다.')
+        else:
+            flash('해당 사용자 이름과 이메일 주소는 이미 사용 중입니다.', 'error')
     return render_template('auth/signup.html', form=form)
 
 
