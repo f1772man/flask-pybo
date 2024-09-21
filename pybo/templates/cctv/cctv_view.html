@@ -31,9 +31,9 @@
         /* 고정된 헤더 섹션 스타일 (둥근 모서리 및 투명 배경 추가) */
         .header-section {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
             background-color: rgba(255, 255, 255, 0.9); /* 반투명 배경 */
             padding: 20px;
             border-radius: 15px; /* 둥근 모서리 */
@@ -53,7 +53,7 @@
         }
 
         .fixed-width-select {
-            width: 200px;
+            width: 150px;
             height: 25px;
         }
 
@@ -79,7 +79,7 @@
             </tr>
             <tr>
                 <td class="align-middle">
-                    <label for="agency-select" class="form-label">관리기관을 선택하세요:</label>
+                    <label for="agency-select" class="form-label">관리기관명:</label>
                 </td>
                 <td>
                     <select id="agency-select" class="form-select fixed-width-select">
@@ -89,18 +89,18 @@
                         {% endfor %}
                     </select>
                 </td>
-                <td class="text-center camera-count" id="camera-total-count">CCTV: 0대</td>
+                <td class="text-center camera-count" id="camera-total-count"> 0대</td>
             </tr>
             <tr>
                 <td class="align-middle">
-                    <label for="area-select" class="form-label">동/길/로/리 선택:</label>
+                    <label for="area-select" class="form-label">동/리 선택:</label>
                 </td>
                 <td>
                     <select id="area-select" class="form-select fixed-width-select">
                         <option value="">전체</option>
                     </select>
                 </td>
-                <td class="text-center camera-count" id="camera-area-count">CCTV: 0대</td>
+                <td class="text-center camera-count" id="camera-area-count"> 0대</td>
             </tr>
         </table>
     </div>
@@ -201,8 +201,8 @@
                                 .bindPopup(`<b>${cctv.name}</b><br>${cctv.address}<br>카메라대수: ${cctv.cameras}`);
                         });
 
-                        cameraTotalCountDiv.textContent = `CCTV: ${totalCameras}대`;
-                        cameraAreaCountDiv.textContent = `CCTV: ${areaCameras}대`;
+                        cameraTotalCountDiv.textContent = `${totalCameras}대`;
+                        cameraAreaCountDiv.textContent = `${areaCameras}대`;
 
                     })
                     .catch(error => {
