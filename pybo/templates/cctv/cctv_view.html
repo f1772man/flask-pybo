@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>세종시 CCTV 위치</title>
+
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ENjdO4Dr2bkBIFxQpeoMb26Gm9Gg6K3yIbXEz5i1IQts62x28YfIz/0T9HYB7Ac4" crossorigin="anonymous">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
+    <style>
+        /* 전체 페이지의 높이를 설정 */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* 컨테이너는 화면 전체를 차지하게 설정 */
+        .container-fluid {
+            height: 100%;
+        }
+
+        /* 헤더 및 선택 박스에 대한 높이를 고정 설정 (지도의 높이에서 제외) */
+        .header-section {
+            height: 180px; /* 고정 높이 설정 */
+        }
+
+        /* 지도의 높이를 나머지 공간으로 설정 */
+        #map {
+            height: calc(95vh - 200px); /* 헤더 높이를 뺀 나머지 공간 */
+            width: 100%;
+        }
+
+        .form-table {
+            table-layout: auto;
+            margin-bottom: 10px;
+            width: auto;
+        }
+
+        .form-table td {
+            padding: 5px;
+            white-space: nowrap;
+        }
+
+        .fixed-width-select {
+            width: 200px;
+            height: 25px;
+        }
+
+        .camera-count {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <!-- Bootstrap Container -->
+    <div class="container-fluid">
+        <div class="header-section">
+            <h1 class="text-center mb-4">세종시 CCTV 위치 지도</h1>
+
+            <!-- 테이블 형식으로 라벨과 리스트 정렬 -->
+            <table class="form-table mx-auto">
+                <tr>
+                    <td class="align-middle">
+                        <label for="agency-select" class="form-label">관리기관을 선택하세요:</label>
+                    </td>
+                    <td>
+                        <select id="agency-select" class="form-select fixed-width-select">
+                            <option value="">전체</option>
+                            {% for agency in agencies %}
+                                <option value="{{ agency }}">{{ agency }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="align-middle">
+                        <label for="area-select" class="form-label">동/길/로/리 선택:</label>
+                    </td>
+                    <td>
+                        <select id="area-select" class="form-select fixed-width-select">
+                            <option value="">전체</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- CCTV 수량 표시 영역 -->
+            <div class="text-center camera-count" id="camera-count">CCTV 수량: 0대</div>
+        </div>
+
+        <!-- 지도 영역 -->
+        <div id="map"></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <!-- Bootstrap JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-mQ93t8AnKAlP6l+Z6ivc9K/CpPpiU0dvcQ5Nx9+t/y78VDHxa/9A8dW34da1P5pN" crossorigin="anonymous"></script>
+
+    <script>
+        // 새로운 마커 아이콘 정의
+        var cctvIcon = L.icon({
+            iconUrl: '/static/cctv_icon.png',  // 아이콘 이미지 경로 수정
+            iconSize: [32, 32],        // 아이콘 크기
+            iconAnchor: [16, 32],      // 아이콘의 앵커 포인트 (아이콘의 중심)
+            popupAnchor: [0, -32]      // 팝업 위치
+        });
+
+        var map = L.map('map').setView([36.4871, 127.2595], 13); // 세종시 중심 좌표
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        var agencySelect = document.getElementById('agency-select');
+        var areaSelect = document.getElementById('area-select');
+        var cameraCountDiv = document.getElementById('camera-count'); // 카메라 수량을 표시하는 요소
+
+        // 관리기관 선택 시 이벤트 처리
+        agencySelect.addEventListener('change', function() {
+            loadAreaOptions(agencySelect.value);
+            loadCctvData(agencySelect.value, '');
+        });
+
+        // 지역 선택 시 이벤트 처리
+        areaSelect.addEventListener('change', function() {
+            loadCctvData(agencySelect.value, areaSelect.value, true); // 지역 선택 시 중심 이동
+        });
+
+        // 관리기관 선택에 따라 동/길/로/리 옵션 로드
+        function loadAreaOptions(selectedAgency) {
+            fetch(`/cctv_app/api/cctv_locations?agency=${selectedAgency}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);  // 데이터 확인을 위한 콘솔 출력
+                    console.log(data.total_cameras);  // 여기에 콘솔 로그 추가하여 값 확인
+                    var areas = new Set();
+                    data.locations.forEach(cctv => {
+                        if (cctv.dong) areas.add(cctv.dong);
+                        if (cctv.gil) areas.add(cctv.gil);
+                        if (cctv.ro) areas.add(cctv.ro);
+                        if (cctv.ri) areas.add(cctv.ri);
+                    });
+
+                    // 기존 옵션 제거 후 새로 추가
+                    areaSelect.innerHTML = '<option value="">전체</option>';
+                    areas.forEach(area => {
+                        var option = document.createElement('option');
+                        option.value = area;
+                        option.textContent = area;
+                        areaSelect.appendChild(option);
+                    });
+                });
+        }
+
+        // CCTV 위치 API 호출 및 지도에 표시 + CCTV 수량 표시
+        function loadCctvData(selectedAgency, selectedArea, focusOnFirst) {
+            try {
+                var url = '/cctv_app/api/cctv_locations?';
+                if (selectedAgency) {
+                    url += `agency=${selectedAgency}`;
+                }
+                if (selectedArea) {
+                    url += `&area=${selectedArea}`;
+                }
+
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        // 기존 마커 제거
+                        map.eachLayer(function(layer) {
+                            if (layer instanceof L.Marker) {
+                                map.removeLayer(layer);
+                            }
+                        });
+
+                        // "전체" 선택 시 초기 위치로 이동
+                        if (!selectedArea || selectedArea === "") {
+                            map.setView([36.4871, 127.2595], 13); // 초기 세종시 중심으로 이동
+                        }
+
+                        var totalCameras = data.total_cameras; // 백엔드에서 받은 카메라 수량
+
+                        // 새 CCTV 위치 마커 추가 및 중심 이동 처리
+                        if (data.locations.length > 0 && focusOnFirst) {
+                            // 첫 번째 CCTV 위치로 지도 중심 이동
+                            map.setView([data.locations[0].latitude, data.locations[0].longitude], 15);
+                        }
+
+                        data.locations.forEach(cctv => {
+                            L.marker([cctv.latitude, cctv.longitude], { icon: cctvIcon })
+                                .addTo(map)
+                                .bindPopup(`<b>${cctv.name}</b><br>${cctv.address}`);
+                        });
+
+                        // CCTV 수량 표시 업데이트
+                        cameraCountDiv.textContent = `CCTV 수량: ${totalCameras}대`;
+
+                    })
+                    .catch(error => {
+                        console.error("Error fetching CCTV data:", error);
+                    });
+            } catch (error) {
+                console.error("Error loading CCTV data:", error);
+            }
+        }
+
+        // 초기 데이터 로드
+        loadCctvData('', '', false);
+    </script>
+</body>
+</html>

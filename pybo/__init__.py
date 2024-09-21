@@ -2,7 +2,7 @@ from flask import Flask, render_template
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
-
+from .cctv import cctv_bp  # cctv.py 파일의 블루프린트 임포트
 # import config
 
 naming_convention = {
@@ -31,14 +31,13 @@ def create_app():
     else:
         migrate.init_app(app, db)
 
-    @app.template_filter('format_date')
-    def format_date(value, fmt='%m월 %d일'):
-        return value.strftime(fmt)
-
     from . import models
 
     # 블루프린트
     from .views import main_views, question_views, answer_views, auth_views
+
+    # 블루프린트 등록
+    app.register_blueprint(cctv_bp, url_prefix='/cctv_app')
 
     app.register_blueprint(main_views.bp)
     app.register_blueprint(question_views.bp)
