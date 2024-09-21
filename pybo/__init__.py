@@ -31,6 +31,10 @@ def create_app():
     else:
         migrate.init_app(app, db)
 
+    @app.template_filter('format_date')
+    def format_date(value, fmt='%m월 %d일'):
+        return value.strftime(fmt)
+
     from . import models
 
     # 블루프린트

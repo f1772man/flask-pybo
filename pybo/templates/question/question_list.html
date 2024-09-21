@@ -4,10 +4,10 @@
     <table class="table">
         <thead>
         <tr class="text-center thread-dark">
-            <th>번호</th>
+            <th style="white-space : nowrap">번호</th>
             <th style="width:50%">제목</th>
             <th>글쓴이</th>
-            <th>작성일시</th>
+            <th style="white-space : nowrap">작성일시</th>
         </tr>
         </thead>
         <tbody>
@@ -22,7 +22,7 @@
                 {% endif %}
             </td>
             <td>{{ question.user.username }}</td>       <!--글쓴이 추가-->
-            <td>{{ question.create_date|datetime }}</td>
+            <td>{{ question.create_date|format_date }}</td>
         </tr>
         {% endfor %}
         {% else %}
