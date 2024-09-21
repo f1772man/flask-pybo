@@ -69,26 +69,31 @@ def get_cctv_locations():
     locations = read_cctv_locations()
 
     filtered_locations = []
-    total_cameras = 0
-
+    area_cameras = 0
+    total_cameras = 0  # 관리기관 필터만 적용한 총 카메라 수
     for cctv in locations:
         # 관리기관 필터 적용
         if agency and agency != "" and cctv['agency'] != agency:
             continue
+
+        # 관리기관에 대한 카메라 수량 추가
+        total_cameras += cctv['cameras']
 
         # 동/길/로/리 필터 적용
         if area and area != "" and area not in (cctv['dong'], cctv['gil'], cctv['ro'], cctv['ri']):
             continue
 
         filtered_locations.append(cctv)
-        total_cameras += cctv['cameras']
+        area_cameras += cctv['cameras']
 
     # 콘솔에 total_cameras 값 출력
-    print(f"Total cameras: {total_cameras}")
+    print(f"Total cameras: {area_cameras}")
+    print(f"Agency cameras: {total_cameras}")
 
     return jsonify({
         "locations": filtered_locations,
-        "total_cameras": total_cameras
+        "area_cameras": area_cameras,
+        "total_cameras": total_cameras,  # 해당 관리기관의 전체 카메라 수
     })
 
 
